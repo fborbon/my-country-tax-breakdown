@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Spain Public Spending — Where Your Taxes Go</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -308,6 +310,116 @@
     }
     .source-card a:hover { text-decoration: underline; }
 
+    /* ── MAP ── */
+    .map-layout {
+      display: grid;
+      grid-template-columns: 1fr 280px;
+      gap: 20px;
+      margin-bottom: 36px;
+      align-items: start;
+    }
+    @media (max-width: 860px) { .map-layout { grid-template-columns: 1fr; } }
+
+    .map-box {
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .map-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+    .map-controls span { font-size: 0.85rem; color: var(--muted); font-weight: 500; }
+    .map-metric-select {
+      padding: 7px 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      background: var(--bg);
+      color: var(--text);
+      transition: border-color .15s;
+    }
+    .map-metric-select:hover, .map-metric-select:focus { border-color: var(--red); outline: none; }
+
+    #mapSvg { width: 100%; display: block; }
+    .region-path {
+      stroke: #fff;
+      stroke-width: 0.6;
+      cursor: pointer;
+      transition: opacity .12s;
+    }
+    .region-path:hover { opacity: 0.75; stroke: #333; stroke-width: 1.5; }
+
+    .map-legend { margin-top: 12px; }
+    .map-legend-bar {
+      height: 10px;
+      border-radius: 5px;
+      background: linear-gradient(to right, #fde8ea, #8b0000);
+    }
+    .map-legend-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.73rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .map-legend-title { font-size: 0.75rem; color: var(--muted); margin-bottom: 5px; }
+
+    .map-note { font-size: 0.75rem; color: var(--muted); margin-top: 10px; line-height: 1.5; }
+
+    .map-tooltip {
+      position: fixed;
+      background: rgba(26,26,46,0.93);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.81rem;
+      pointer-events: none;
+      display: none;
+      z-index: 9999;
+      max-width: 210px;
+      line-height: 1.6;
+    }
+    .map-tooltip strong { display: block; font-size: 0.9rem; margin-bottom: 3px; }
+
+    .map-sidebar { display: flex; flex-direction: column; gap: 14px; }
+    .rank-box {
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .rank-box h4 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .rank-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.82rem;
+    }
+    .rank-row:last-child { border-bottom: none; }
+    .rank-num {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.68rem; font-weight: 700;
+      flex-shrink: 0; color: #fff;
+    }
+    .rank-name { flex: 1; }
+    .rank-val { font-weight: 600; }
+
     footer {
       text-align: center;
       font-size: 0.78rem;
@@ -388,6 +500,48 @@
   <div class="bar-box">
     <canvas id="barChart" height="320"></canvas>
   </div>
+
+  <!-- REGION MAP -->
+  <div class="section-title">Spending by Autonomous Community</div>
+  <div class="map-layout">
+    <div class="map-box">
+      <div class="map-controls">
+        <span>Show:</span>
+        <select class="map-metric-select" id="mapMetric">
+          <option value="total">Total CC.AA. spending / capita</option>
+          <option value="health">Health spending / capita</option>
+          <option value="education">Education spending / capita</option>
+          <option value="social">Social services / capita</option>
+        </select>
+      </div>
+      <div id="mapContainer"></div>
+      <div class="map-legend">
+        <div class="map-legend-title" id="mapLegendTitle"></div>
+        <div class="map-legend-bar"></div>
+        <div class="map-legend-labels">
+          <span id="mapLegendMin"></span>
+          <span>← lower · higher →</span>
+          <span id="mapLegendMax"></span>
+        </div>
+      </div>
+      <p class="map-note">
+        CC.AA. own-budget expenditure only — excludes central government and Social Security spending within each region.
+        País Vasco and Navarra are higher due to the foral financing system (Concierto/Convenio Económico).
+        Source: <a href="https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadNacional/Paginas/home.aspx" target="_blank" rel="noopener" style="color:var(--red)">IGAE — Cuentas de las CC.AA.</a>
+      </p>
+    </div>
+    <div class="map-sidebar">
+      <div class="rank-box">
+        <h4>Highest spending</h4>
+        <div id="mapTop5"></div>
+      </div>
+      <div class="rank-box">
+        <h4>Lowest spending</h4>
+        <div id="mapBot5"></div>
+      </div>
+    </div>
+  </div>
+  <div class="map-tooltip" id="mapTooltip"></div>
 
   <!-- EU COMPARISON -->
   <div class="section-title">Spain vs EU-27 Average — % of GDP</div>
@@ -745,6 +899,188 @@
     },
   };
 
+  /* ─────────────────────────────────────────────────────────────
+     REGION MAP DATA — CC.AA. own-budget spending per capita (€)
+     Source: IGAE Cuentas de las Comunidades Autónomas
+  ───────────────────────────────────────────────────────────── */
+  const MAP_METRICS = {
+    total:     'Total / capita',
+    health:    'Health / capita',
+    education: 'Education / capita',
+    social:    'Social services / capita',
+  };
+
+  const REGION_DATA = {
+    2021: {
+      'Andalucía':          { total: 3520, health: 1420, education: 940,  social: 590 },
+      'Aragón':             { total: 3900, health: 1600, education: 1020, social: 650 },
+      'Asturias':           { total: 3960, health: 1700, education: 1000, social: 700 },
+      'Baleares':           { total: 3550, health: 1470, education: 940,  social: 590 },
+      'Canarias':           { total: 3800, health: 1550, education: 1000, social: 640 },
+      'Cantabria':          { total: 4000, health: 1660, education: 1030, social: 680 },
+      'Castilla-La Mancha': { total: 3660, health: 1540, education: 960,  social: 620 },
+      'Castilla y León':    { total: 4050, health: 1680, education: 1040, social: 690 },
+      'Cataluña':           { total: 3320, health: 1380, education: 900,  social: 570 },
+      'Ceuta':              { total: 5000, health: 1870, education: 1380, social: 920 },
+      'C. Valenciana':      { total: 3170, health: 1300, education: 860,  social: 540 },
+      'Extremadura':        { total: 4580, health: 1830, education: 1150, social: 770 },
+      'Galicia':            { total: 3900, health: 1640, education: 1010, social: 660 },
+      'La Rioja':           { total: 3850, health: 1580, education: 1000, social: 650 },
+      'Madrid':             { total: 3080, health: 1270, education: 840,  social: 520 },
+      'Melilla':            { total: 4720, health: 1730, education: 1270, social: 840 },
+      'Murcia':             { total: 3470, health: 1420, education: 920,  social: 580 },
+      'Navarra':            { total: 6250, health: 2360, education: 1560, social: 1060 },
+      'País Vasco':         { total: 6750, health: 2580, education: 1690, social: 1140 },
+    },
+    2022: {
+      'Andalucía':          { total: 3650, health: 1440, education: 960,  social: 600 },
+      'Aragón':             { total: 4050, health: 1600, education: 1040, social: 670 },
+      'Asturias':           { total: 4100, health: 1680, education: 1020, social: 720 },
+      'Baleares':           { total: 3700, health: 1480, education: 960,  social: 610 },
+      'Canarias':           { total: 3950, health: 1530, education: 1020, social: 660 },
+      'Cantabria':          { total: 4150, health: 1640, education: 1050, social: 700 },
+      'Castilla-La Mancha': { total: 3800, health: 1520, education: 980,  social: 640 },
+      'Castilla y León':    { total: 4200, health: 1660, education: 1060, social: 710 },
+      'Cataluña':           { total: 3450, health: 1380, education: 920,  social: 590 },
+      'Ceuta':              { total: 5200, health: 1900, education: 1400, social: 950 },
+      'C. Valenciana':      { total: 3300, health: 1300, education: 880,  social: 560 },
+      'Extremadura':        { total: 4750, health: 1820, education: 1180, social: 800 },
+      'Galicia':            { total: 4050, health: 1620, education: 1030, social: 680 },
+      'La Rioja':           { total: 4000, health: 1580, education: 1020, social: 670 },
+      'Madrid':             { total: 3200, health: 1260, education: 860,  social: 540 },
+      'Melilla':            { total: 4900, health: 1750, education: 1300, social: 870 },
+      'Murcia':             { total: 3600, health: 1420, education: 940,  social: 600 },
+      'Navarra':            { total: 6500, health: 2400, education: 1600, social: 1100 },
+      'País Vasco':         { total: 7000, health: 2600, education: 1720, social: 1180 },
+    },
+    2023: {
+      'Andalucía':          { total: 3800, health: 1500, education: 1000, social: 630 },
+      'Aragón':             { total: 4200, health: 1660, education: 1080, social: 700 },
+      'Asturias':           { total: 4280, health: 1740, education: 1060, social: 750 },
+      'Baleares':           { total: 3860, health: 1540, education: 1000, social: 640 },
+      'Canarias':           { total: 4100, health: 1590, education: 1060, social: 690 },
+      'Cantabria':          { total: 4320, health: 1700, education: 1090, social: 730 },
+      'Castilla-La Mancha': { total: 3960, health: 1580, education: 1020, social: 670 },
+      'Castilla y León':    { total: 4380, health: 1720, education: 1100, social: 740 },
+      'Cataluña':           { total: 3600, health: 1440, education: 960,  social: 620 },
+      'Ceuta':              { total: 5400, health: 1970, education: 1460, social: 990 },
+      'C. Valenciana':      { total: 3450, health: 1360, education: 920,  social: 590 },
+      'Extremadura':        { total: 4950, health: 1900, education: 1230, social: 840 },
+      'Galicia':            { total: 4220, health: 1690, education: 1070, social: 710 },
+      'La Rioja':           { total: 4160, health: 1640, education: 1060, social: 700 },
+      'Madrid':             { total: 3340, health: 1310, education: 900,  social: 565 },
+      'Melilla':            { total: 5100, health: 1820, education: 1350, social: 910 },
+      'Murcia':             { total: 3750, health: 1480, education: 980,  social: 630 },
+      'Navarra':            { total: 6800, health: 2500, education: 1670, social: 1150 },
+      'País Vasco':         { total: 7300, health: 2700, education: 1790, social: 1230 },
+    },
+  };
+
+  let mapFeatures   = null;
+  let currentMetric = 'total';
+
+  function matchRegion(raw) {
+    if (!raw) return null;
+    const s = t => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+    const n = s(raw)
+      .replace(/principado de /, '').replace(/comunidad foral de /, '')
+      .replace(/comunitat valenciana/, 'c. valenciana')
+      .replace(/comunidad de madrid/, 'madrid')
+      .replace(/region de murcia/, 'murcia')
+      .replace(/ciudad autonoma de /, '')
+      .replace(/illes? balears?/, 'baleares').replace(/islas? bale[ao]res?/, 'baleares')
+      .replace(/islas? canarias?/, 'canarias')
+      .replace(/castilla - la mancha/, 'castilla-la mancha')
+      .replace(/castilla la mancha/, 'castilla-la mancha')
+      .replace(/euskadi/, 'pais vasco')
+      .replace(/catalu[ñn]a/, 'cataluna');
+    for (const key of Object.keys(REGION_DATA[2022])) {
+      const k = s(key);
+      if (k === n || n.includes(k) || k.includes(n)) return key;
+    }
+    return null;
+  }
+
+  async function initMap() {
+    try {
+      const topo = await d3.json('https://cdn.jsdelivr.net/npm/es-atlas@0.3.0/es/autonomous_regions.json');
+      mapFeatures = topojson.feature(topo, topo.objects.autonomous_regions).features;
+      renderMap();
+      renderRankings();
+    } catch {
+      document.getElementById('mapContainer').innerHTML =
+        '<p style="padding:24px;text-align:center;color:var(--muted)">Map unavailable — check your internet connection.</p>';
+    }
+  }
+
+  function renderMap() {
+    const container = document.getElementById('mapContainer');
+    container.innerHTML = '';
+    const W = container.offsetWidth || 560;
+    const H = Math.round(W * 0.68);
+
+    const svg = d3.select(container).append('svg')
+      .attr('id', 'mapSvg').attr('viewBox', `0 0 ${W} ${H}`);
+
+    const proj = d3.geoMercator()
+      .fitSize([W, H], { type: 'FeatureCollection', features: mapFeatures });
+    const path = d3.geoPath().projection(proj);
+
+    const vals = mapFeatures.map(f => {
+      const k = matchRegion(f.properties.name);
+      return k ? (REGION_DATA[currentYear][k]?.[currentMetric] ?? null) : null;
+    });
+    const defined = vals.filter(v => v !== null);
+    const vMin = d3.min(defined), vMax = d3.max(defined);
+    const color = d3.scaleSequential(d3.interpolateRgb('#fde8ea', '#8b0000')).domain([vMin, vMax]);
+    const tooltip = document.getElementById('mapTooltip');
+
+    svg.selectAll('path').data(mapFeatures).join('path')
+      .attr('class', 'region-path')
+      .attr('d', path)
+      .attr('fill', (f, i) => vals[i] !== null ? color(vals[i]) : '#ddd')
+      .on('mousemove', (event, f) => {
+        const k   = matchRegion(f.properties.name);
+        const row = k ? REGION_DATA[currentYear][k] : null;
+        const v   = row?.[currentMetric];
+        tooltip.style.display = 'block';
+        tooltip.style.left    = (event.clientX + 14) + 'px';
+        tooltip.style.top     = (event.clientY - 12) + 'px';
+        tooltip.innerHTML = `<strong>${f.properties.name ?? k ?? '—'}</strong>
+          ${MAP_METRICS[currentMetric]}: <b>${v ? '€' + v.toLocaleString() : 'N/A'}</b>
+          ${row ? `<br>Health: €${row.health.toLocaleString()} &ensp; Education: €${row.education.toLocaleString()}<br>Social: €${row.social.toLocaleString()}` : ''}`;
+      })
+      .on('mouseleave', () => { tooltip.style.display = 'none'; });
+
+    document.getElementById('mapLegendTitle').textContent = MAP_METRICS[currentMetric];
+    document.getElementById('mapLegendMin').textContent   = `€${vMin.toLocaleString()}`;
+    document.getElementById('mapLegendMax').textContent   = `€${vMax.toLocaleString()}`;
+  }
+
+  function renderRankings() {
+    const rows = Object.entries(REGION_DATA[currentYear])
+      .map(([name, d]) => ({ name, val: d[currentMetric] }))
+      .sort((a, b) => b.val - a.val);
+    const row = (r, rank, bg) =>
+      `<div class="rank-row"><div class="rank-num" style="background:${bg}">${rank}</div>
+       <div class="rank-name">${r.name}</div><div class="rank-val">€${r.val.toLocaleString()}</div></div>`;
+    document.getElementById('mapTop5').innerHTML =
+      rows.slice(0, 5).map((r, i) => row(r, i + 1, '#8b0000')).join('');
+    document.getElementById('mapBot5').innerHTML =
+      rows.slice(-5).reverse().map((r, i) => row(r, rows.length - i, '#2980b9')).join('');
+  }
+
+  function updateMap() {
+    if (!mapFeatures) return;
+    renderMap();
+    renderRankings();
+  }
+
+  document.getElementById('mapMetric').addEventListener('change', e => {
+    currentMetric = e.target.value;
+    updateMap();
+  });
+
   /* EU-27 average general government expenditure as % of GDP
      Source: Eurostat GFS table gov_10a_exp — GDP-weighted EU-27 aggregate
      Order matches CATS: Social Protection, Health, Education, General Public Services,
@@ -1032,6 +1368,7 @@
     buildLegendCards();
     updateCharts();
     updateEUChart();
+    updateMap();
     document.getElementById('detailPanel').classList.remove('visible');
   }
 
@@ -1046,6 +1383,7 @@
   buildLegendCards();
   initCharts();
   initEUChart();
+  initMap();
 </script>
 </body>
 </html>
