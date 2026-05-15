@@ -32,16 +32,19 @@ All figures are approximate, rounded to the nearest €1 billion, and represent 
 
 ## Spending categories (COFOG)
 
-1. Social Protection — pensions, unemployment, disability, family benefits
-2. Health — hospitals, primary care, pharmaceuticals
-3. Education — pre-school through university
-4. General Public Services — administration, judiciary, debt interest
-5. Economic Affairs — infrastructure, agriculture (CAP), energy, R&D
-6. Public Order & Safety — police, civil guard, prisons, emergency services
-7. Housing & Community — social housing, water, sanitation
-8. Defense — armed forces, NATO contributions
-9. Environmental Protection — waste, water treatment, climate policy
-10. Recreation, Culture & Religion — museums, sports, broadcasting
+Pensions are shown as a **separate category** (split from Social Protection) because they alone account for ~29% of all public spending — the largest single budget item by far.
+
+1. **Pensions** — old-age (jubilación), widow/widower, disability pensions, Clases Pasivas (~29% of total)
+2. Other Social Protection — unemployment, sick-leave pay, family benefits, Ingreso Mínimo Vital
+3. Health — hospitals, primary care, pharmaceuticals
+4. Education — pre-school through university
+5. General Public Services — administration, judiciary, debt interest
+6. Economic Affairs — infrastructure, agriculture (CAP), energy, R&D
+7. Public Order & Safety — police, civil guard, prisons, emergency services
+8. Housing & Community — social housing, water, sanitation
+9. Defense — armed forces, NATO contributions
+10. Environmental Protection — waste, water treatment, climate policy
+11. Recreation, Culture & Religion — museums, sports, broadcasting
 
 ## Tech stack
 

@@ -473,7 +473,7 @@
     </div>
     <div class="summary-card green">
       <label>Largest Category</label>
-      <div class="val">Social Protection</div>
+      <div class="val" id="s-largest-name"></div>
       <div class="sub" id="s-largest"></div>
     </div>
   </div>
@@ -617,10 +617,16 @@
 
   const CATS = [
     {
-      label: 'Social Protection',
+      label: 'Pensions',
+      icon: '👴',
+      color: '#7b241c',
+      desc: 'The single largest item in Spain\'s budget. Includes old-age retirement pensions (jubilación), widow/widower pensions (viudedad), permanent disability pensions (incapacidad permanente), and civil servant pensions (Clases Pasivas). Managed by Social Security and Treasury. Expenditure grows each year as Spain\'s population ages and pensions are indexed to CPI inflation.',
+    },
+    {
+      label: 'Other Social Protection',
       icon: '🛡️',
       color: '#c0392b',
-      desc: 'The largest spending area. Covers retirement pensions (the dominant share), unemployment benefits, family and maternity allowances, disability benefits, and other social transfers managed mainly by Social Security.',
+      desc: 'Social transfers excluding pensions. Covers unemployment benefits (prestación por desempleo), temporary disability/sick-leave pay, family and maternity allowances, the Minimum Vital Income (Ingreso Mínimo Vital) and other social assistance programmes managed mainly by Social Security.',
     },
     {
       label: 'Health',
@@ -683,10 +689,15 @@
       total: 574, gdp: 1205, gdpPct: 47.6, pop: '47.4M', perCapita: 12110,
       note: 'Elevated spending due to COVID-19 pandemic response and economic support measures.',
       cats: [
-        { amount: 246, pct: 42.9, sub: [
-          { name: 'Retirement Pensions',   val: '€163B' },
-          { name: 'Unemployment Benefits', val: '€28B'  },  // Higher in 2021, still recovering
-          { name: 'Disability Benefits',   val: '€18B'  },
+        { amount: 163, pct: 28.4, sub: [
+          { name: 'Old-age (jubilación)',        val: '€108B' },
+          { name: 'Widow/widower (viudedad)',    val: '€22B'  },
+          { name: 'Disability pensions',         val: '€16B'  },
+          { name: 'Clases Pasivas & other',      val: '€17B'  },
+        ]},
+        { amount: 83, pct: 14.5, sub: [
+          { name: 'Unemployment Benefits', val: '€28B'  },
+          { name: 'Disability Benefits (temp.)', val: '€18B' },
           { name: 'Family & Maternity',    val: '€15B'  },
           { name: 'Other Social',          val: '€22B'  },
         ]},
@@ -756,10 +767,15 @@
       total: 585, gdp: 1327, gdpPct: 44.1, pop: '47.4M', perCapita: 12340,
       note: 'Post-COVID normalisation. Energy crisis drove higher subsidies; pension expenditure rose with inflation indexation.',
       cats: [
-        { amount: 253, pct: 43.2, sub: [
-          { name: 'Retirement Pensions',   val: '€167B' },
+        { amount: 167, pct: 28.5, sub: [
+          { name: 'Old-age (jubilación)',        val: '€111B' },
+          { name: 'Widow/widower (viudedad)',    val: '€23B'  },
+          { name: 'Disability pensions',         val: '€16B'  },
+          { name: 'Clases Pasivas & other',      val: '€17B'  },
+        ]},
+        { amount: 86, pct: 14.7, sub: [
           { name: 'Unemployment Benefits', val: '€21B'  },
-          { name: 'Disability Benefits',   val: '€18B'  },
+          { name: 'Disability Benefits (temp.)', val: '€18B' },
           { name: 'Family & Maternity',    val: '€15B'  },
           { name: 'Other Social',          val: '€32B'  },
         ]},
@@ -829,10 +845,15 @@
       total: 596, gdp: 1346, gdpPct: 44.3, pop: '47.5M', perCapita: 12550,
       note: 'Continued pension growth linked to CPI indexation; defense spending increased; EU recovery funds (PRTR) active.',
       cats: [
-        { amount: 261, pct: 43.8, sub: [
-          { name: 'Retirement Pensions',   val: '€171B' },
+        { amount: 171, pct: 28.7, sub: [
+          { name: 'Old-age (jubilación)',        val: '€114B' },
+          { name: 'Widow/widower (viudedad)',    val: '€24B'  },
+          { name: 'Disability pensions',         val: '€17B'  },
+          { name: 'Clases Pasivas & other',      val: '€16B'  },
+        ]},
+        { amount: 90, pct: 15.1, sub: [
           { name: 'Unemployment Benefits', val: '€22B'  },
-          { name: 'Disability Benefits',   val: '€19B'  },
+          { name: 'Disability Benefits (temp.)', val: '€19B' },
           { name: 'Family & Maternity',    val: '€16B'  },
           { name: 'Other Social',          val: '€33B'  },
         ]},
@@ -1083,12 +1104,13 @@
 
   /* EU-27 average general government expenditure as % of GDP
      Source: Eurostat GFS table gov_10a_exp — GDP-weighted EU-27 aggregate
-     Order matches CATS: Social Protection, Health, Education, General Public Services,
-     Economic Affairs, Public Order & Safety, Housing, Defense, Environment, Culture */
+     Order matches CATS: Pensions, Other Social Protection, Health, Education,
+     General Public Services, Economic Affairs, Public Order & Safety,
+     Housing, Defense, Environment, Culture */
   const EU_AVG_GDP_PCT = {
-    2021: [21.0, 8.0, 5.2, 7.3, 6.7, 1.9, 1.0, 1.4, 0.9, 1.0],
-    2022: [19.6, 7.5, 5.0, 6.7, 6.0, 1.8, 0.9, 1.5, 0.8, 1.0],
-    2023: [19.4, 7.4, 4.9, 6.6, 5.8, 1.8, 0.9, 1.6, 0.8, 1.0],
+    2021: [12.5, 8.5, 8.0, 5.2, 7.3, 6.7, 1.9, 1.0, 1.4, 0.9, 1.0],
+    2022: [12.0, 7.6, 7.5, 5.0, 6.7, 6.0, 1.8, 0.9, 1.5, 0.8, 1.0],
+    2023: [11.9, 7.5, 7.4, 4.9, 6.6, 5.8, 1.8, 0.9, 1.6, 0.8, 1.0],
   };
 
   /* ─────────────────────────────────────────────────────────────
@@ -1129,7 +1151,9 @@
     document.getElementById('s-capita').textContent = `~€${y.perCapita.toLocaleString()}`;
     document.getElementById('s-capita-sub').textContent = `Based on ~${y.pop} inhabitants`;
 
-    document.getElementById('s-largest').textContent = `${yearCats()[0].pct}% of total spending`;
+    const top = yearCats()[0];
+    document.getElementById('s-largest-name').textContent = top.label;
+    document.getElementById('s-largest').textContent = `${top.pct}% of total spending`;
   }
 
   /* ─────────────────────────────────────────────────────────────
