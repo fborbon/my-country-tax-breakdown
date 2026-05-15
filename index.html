@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spain Public Spending — Where Your Taxes Go</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --red:    #c60b1e;
+      --yellow: #ffc400;
+      --dark:   #1a1a2e;
+      --panel:  #ffffff;
+      --bg:     #f4f5f7;
+      --text:   #222;
+      --muted:  #666;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--dark);
+      color: #fff;
+      padding: 0;
+    }
+    .header-stripe {
+      height: 6px;
+      background: linear-gradient(90deg, var(--red) 33.3%, var(--yellow) 33.3%, var(--yellow) 66.6%, var(--red) 66.6%);
+    }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px 24px 24px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .flag { font-size: 3rem; line-height: 1; }
+    .header-text h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .header-text p {
+      color: #aab;
+      font-size: 0.92rem;
+      margin-top: 4px;
+    }
+
+    /* ── MAIN ── */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+
+    /* ── YEAR SELECTOR ── */
+    .year-selector-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .year-selector-row span {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-right: 4px;
+    }
+    .year-btn {
+      background: var(--panel);
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      padding: 9px 24px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all .18s;
+      letter-spacing: 0.5px;
+    }
+    .year-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+    .year-btn.active {
+      background: var(--red);
+      border-color: var(--red);
+      color: #fff;
+      box-shadow: 0 3px 10px rgba(198,11,30,0.3);
+    }
+    .year-note {
+      margin-left: auto;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    /* ── SUMMARY CARDS ── */
+    .summary-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 36px;
+    }
+    .summary-card {
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      border-left: 4px solid var(--red);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      transition: all .2s;
+    }
+    .summary-card.yellow { border-left-color: var(--yellow); }
+    .summary-card.blue   { border-left-color: #2980b9; }
+    .summary-card.green  { border-left-color: #27ae60; }
+    .summary-card label {
+      display: block;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .summary-card .val {
+      font-size: 1.6rem;
+      font-weight: 700;
+    }
+    .summary-card .sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .summary-card .delta {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 4px;
+      padding: 2px 7px;
+      border-radius: 99px;
+    }
+    .delta.up   { background: #e8f5e9; color: #2e7d32; }
+    .delta.down { background: #fce4ec; color: #c62828; }
+    .delta.none { display: none; }
+
+    /* ── SECTION TITLE ── */
+    .section-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 2px;
+      background: #e0e0e0;
+      border-radius: 2px;
+    }
+
+    /* ── CHART + LEGEND LAYOUT ── */
+    .chart-layout {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 24px;
+      margin-bottom: 36px;
+      align-items: start;
+    }
+    @media (max-width: 820px) {
+      .chart-layout { grid-template-columns: 1fr; }
+    }
+    .chart-box {
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .chart-box canvas { display: block; }
+
+    /* ── LEGEND CARDS ── */
+    .legend-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    @media (max-width: 540px) { .legend-grid { grid-template-columns: 1fr; } }
+
+    .cat-card {
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      cursor: pointer;
+      transition: box-shadow .15s, transform .15s;
+    }
+    .cat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); transform: translateY(-1px); }
+    .cat-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+    .cat-info { flex: 1; min-width: 0; }
+    .cat-name { font-size: 0.85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cat-amount { font-size: 0.78rem; color: var(--muted); }
+    .cat-pct { font-size: 1.05rem; font-weight: 700; flex-shrink: 0; }
+    .progress-bar {
+      height: 4px;
+      border-radius: 2px;
+      background: #eee;
+      margin-top: 6px;
+      overflow: hidden;
+    }
+    .progress-fill { height: 100%; border-radius: 2px; transition: width .4s ease; }
+
+    /* ── HORIZONTAL BAR ── */
+    .bar-box {
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      margin-bottom: 36px;
+    }
+
+    /* ── DETAIL PANEL ── */
+    .detail-panel {
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 24px 28px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      margin-bottom: 36px;
+      border-top: 4px solid var(--red);
+      display: none;
+    }
+    .detail-panel.visible { display: block; }
+    .detail-panel h3 { font-size: 1.1rem; margin-bottom: 8px; }
+    .detail-panel p  { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+    .detail-panel .sub-items {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .sub-item {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+    }
+    .sub-item strong { display: block; font-size: 0.95rem; }
+
+    /* ── NOTES ── */
+    .notes-box {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      font-size: 0.85rem;
+      color: #555;
+      margin-bottom: 36px;
+      line-height: 1.6;
+    }
+    .notes-box strong { color: #333; }
+
+    /* ── SOURCES ── */
+    .sources-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      margin-bottom: 36px;
+    }
+    .source-card {
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      border-left: 3px solid var(--red);
+    }
+    .source-card h4 { font-size: 0.9rem; margin-bottom: 4px; }
+    .source-card p  { font-size: 0.78rem; color: var(--muted); margin-bottom: 8px; line-height: 1.5; }
+    .source-card a  {
+      font-size: 0.78rem;
+      color: var(--red);
+      word-break: break-all;
+      text-decoration: none;
+    }
+    .source-card a:hover { text-decoration: underline; }
+
+    footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+      padding: 24px;
+      border-top: 1px solid #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-stripe"></div>
+  <div class="header-inner">
+    <div class="flag">🇪🇸</div>
+    <div class="header-text">
+      <h1>Where Do Spanish Taxes Go?</h1>
+      <p>Breakdown of Spain's consolidated public spending by category — all government levels combined</p>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- YEAR SELECTOR -->
+  <div class="year-selector-row">
+    <span>Fiscal year:</span>
+    <button class="year-btn" data-year="2021">2021</button>
+    <button class="year-btn" data-year="2022">2022</button>
+    <button class="year-btn active" data-year="2023">2023</button>
+    <span class="year-note">Click a year to switch data &mdash; all figures are approximate</span>
+  </div>
+
+  <!-- SUMMARY CARDS -->
+  <div class="summary-row">
+    <div class="summary-card">
+      <label>Total Public Spending</label>
+      <div class="val" id="s-total"></div>
+      <div class="sub" id="s-total-sub"></div>
+      <div class="delta" id="s-total-delta"></div>
+    </div>
+    <div class="summary-card yellow">
+      <label>% of GDP</label>
+      <div class="val" id="s-gdp"></div>
+      <div class="sub" id="s-gdp-sub"></div>
+    </div>
+    <div class="summary-card blue">
+      <label>Per Capita Spending</label>
+      <div class="val" id="s-capita"></div>
+      <div class="sub" id="s-capita-sub"></div>
+    </div>
+    <div class="summary-card green">
+      <label>Largest Category</label>
+      <div class="val">Social Protection</div>
+      <div class="sub" id="s-largest"></div>
+    </div>
+  </div>
+
+  <!-- DONUT + LEGEND -->
+  <div class="section-title">Spending by Category</div>
+
+  <div class="chart-layout">
+    <div class="chart-box">
+      <canvas id="donutChart" width="344" height="344"></canvas>
+    </div>
+    <div class="legend-grid" id="legendGrid"></div>
+  </div>
+
+  <!-- DETAIL PANEL -->
+  <div class="detail-panel" id="detailPanel">
+    <h3 id="detailTitle"></h3>
+    <p id="detailDesc"></p>
+    <div class="sub-items" id="detailSubItems"></div>
+  </div>
+
+  <!-- HORIZONTAL BAR -->
+  <div class="section-title">Spending Comparison</div>
+  <div class="bar-box">
+    <canvas id="barChart" height="320"></canvas>
+  </div>
+
+  <!-- EU COMPARISON -->
+  <div class="section-title">Spain vs EU-27 Average — % of GDP</div>
+  <div class="bar-box">
+    <canvas id="euChart" height="360"></canvas>
+    <p style="margin-top:14px;font-size:0.78rem;color:var(--muted);line-height:1.5">
+      Values expressed as <strong>% of national GDP</strong> to allow meaningful cross-country comparison independent of country size.
+      EU-27 figures are GDP-weighted averages from Eurostat GFS (table <code>gov_10a_exp</code>).
+      <span id="eu-total-note" style="margin-left:6px"></span>
+    </p>
+  </div>
+
+  <!-- METHODOLOGY NOTE -->
+  <div class="notes-box">
+    <strong>Methodology note:</strong> Figures represent consolidated general government expenditure for Spain (Estado, Comunidades Autónomas, Entidades Locales and Social Security), based on IGAE data and Eurostat COFOG classification. Intra-governmental transfers are netted out to avoid double counting. Numbers are rounded to the nearest €1 billion — consult the official sources below for exact figures.
+  </div>
+
+  <!-- SOURCES -->
+  <div class="section-title">Official Data Sources</div>
+  <div class="sources-grid">
+
+    <div class="source-card">
+      <h4>IGAE — Intervención General de la Administración del Estado</h4>
+      <p>Primary source for Spain's public expenditure statistics (COFOG classification). Publishes annual consolidated accounts of all public administrations.</p>
+      <a href="https://www.igae.pap.hacienda.gob.es/sitios/igae/es-ES/Contabilidad/ContabilidadNacional/Paginas/home.aspx" target="_blank" rel="noopener">igae.pap.hacienda.gob.es</a>
+    </div>
+
+    <div class="source-card">
+      <h4>Ministerio de Hacienda — Presupuestos Generales del Estado</h4>
+      <p>Official State Budget documentation including detailed functional and economic classifications of central government expenditure.</p>
+      <a href="https://www.hacienda.gob.es/es-ES/Presupuesto/presupuestosGeneralesEstado/Paginas/PGE2023.aspx" target="_blank" rel="noopener">hacienda.gob.es — PGE 2023</a>
+    </div>
+
+    <div class="source-card">
+      <h4>Eurostat — Government Finance Statistics</h4>
+      <p>EU-harmonised data on Spain's public expenditure by COFOG function. Enables cross-country comparisons using standardised methodology.</p>
+      <a href="https://ec.europa.eu/eurostat/web/government-finance-statistics/data/database" target="_blank" rel="noopener">ec.europa.eu/eurostat — GFS Database</a>
+    </div>
+
+    <div class="source-card">
+      <h4>Portal de Transparencia del Gobierno de España</h4>
+      <p>Official transparency portal with budget execution data, transfers, and public investment figures broken down by ministry and policy area.</p>
+      <a href="https://transparencia.gob.es/transparencia/transparencia_Home/index/MasDatos/Presupuestos.html" target="_blank" rel="noopener">transparencia.gob.es</a>
+    </div>
+
+    <div class="source-card">
+      <h4>AIReF — Autoridad Independiente de Responsabilidad Fiscal</h4>
+      <p>Independent fiscal oversight body. Publishes spending reviews and analysis of public expenditure efficiency across all government levels.</p>
+      <a href="https://www.airef.es/es/publicaciones/" target="_blank" rel="noopener">airef.es — Publicaciones</a>
+    </div>
+
+    <div class="source-card">
+      <h4>Seguridad Social — Informe Económico Financiero</h4>
+      <p>Detailed Social Security budget report covering pensions, unemployment benefits, healthcare contributions and other social protection programs.</p>
+      <a href="https://www.seg-social.es/wps/portal/wss/internet/EstadisticasPresupuestosEstudios/Presupuestos" target="_blank" rel="noopener">seg-social.es — Presupuestos</a>
+    </div>
+
+  </div>
+
+</main>
+
+<footer id="footer-note">
+  Data based on IGAE, Ministerio de Hacienda and Eurostat official publications. &nbsp;·&nbsp;
+  Figures are approximate and rounded. &nbsp;·&nbsp;
+  Always verify with primary sources linked above.
+</footer>
+
+<script>
+  /* ─────────────────────────────────────────────────────────────
+     DATA — all amounts in € billion, consolidated all administrations
+     Sources: IGAE, Eurostat COFOG, Ministerio de Hacienda
+  ───────────────────────────────────────────────────────────── */
+
+  const CATS = [
+    {
+      label: 'Social Protection',
+      icon: '🛡️',
+      color: '#c0392b',
+      desc: 'The largest spending area. Covers retirement pensions (the dominant share), unemployment benefits, family and maternity allowances, disability benefits, and other social transfers managed mainly by Social Security.',
+    },
+    {
+      label: 'Health',
+      icon: '🏥',
+      color: '#2980b9',
+      desc: 'Spending on hospitals, primary care, pharmaceutical subsidies (recetas) and public health programmes. Most health expenditure is managed by the 17 autonomous communities through their regional health services (SNS).',
+    },
+    {
+      label: 'Education',
+      icon: '🎓',
+      color: '#27ae60',
+      desc: 'Public education from pre-school (0–6) through university and adult learning. Regional governments account for roughly 90% of education spending. Includes teacher salaries, school infrastructure and public university funding.',
+    },
+    {
+      label: 'General Public Services',
+      icon: '🏛️',
+      color: '#8e44ad',
+      desc: 'Central government administration, legislature, judiciary, and debt interest payments. High share of total is due to the large public debt burden inherited from the 2008–2013 financial crisis.',
+    },
+    {
+      label: 'Economic Affairs',
+      icon: '⚙️',
+      color: '#e67e22',
+      desc: 'Transport infrastructure (roads, rail, ports, airports), energy policy, R&D subsidies, industry support and agricultural subsidies (including EU CAP transfers to farmers). Also covers tourism promotion and digital economy initiatives.',
+    },
+    {
+      label: 'Public Order & Safety',
+      icon: '👮',
+      color: '#2c3e50',
+      desc: 'National Police (Policía Nacional), Civil Guard (Guardia Civil), regional police forces (Mossos d\'Esquadra, Ertzaintza, etc.), local police, prisons, courts and emergency services.',
+    },
+    {
+      label: 'Housing & Community',
+      icon: '🏘️',
+      color: '#16a085',
+      desc: 'Social housing programmes, urban regeneration, water supply, sanitation and waste management. Local governments (ayuntamientos) are the primary spenders in this category through municipal services.',
+    },
+    {
+      label: 'Defense',
+      icon: '🪖',
+      color: '#7f8c8d',
+      desc: 'Armed forces (Ejército de Tierra, Armada, Ejército del Aire), military R&D, NATO contributions and international peacekeeping missions. Spain\'s defense budget has been below the NATO 2% GDP target and the government has committed to increasing it.',
+    },
+    {
+      label: 'Environmental Protection',
+      icon: '🌿',
+      color: '#1abc9c',
+      desc: 'Waste management, pollution control, biodiversity protection, climate change mitigation and water treatment. Spain has increased green investment through the Recovery Plan (PRTR) funded by EU NextGenerationEU grants.',
+    },
+    {
+      label: 'Recreation, Culture & Religion',
+      icon: '🎭',
+      color: '#d35400',
+      desc: 'Museums, theatres, public libraries, sports facilities, public broadcasting (RTVE), film and book subsidies, and the historic agreement on Church funding (Iglesia Católica). Most culture spending is at regional and local level.',
+    },
+  ];
+
+  const YEARS = {
+    2021: {
+      total: 574, gdp: 1205, gdpPct: 47.6, pop: '47.4M', perCapita: 12110,
+      note: 'Elevated spending due to COVID-19 pandemic response and economic support measures.',
+      cats: [
+        { amount: 246, pct: 42.9, sub: [
+          { name: 'Retirement Pensions',   val: '€163B' },
+          { name: 'Unemployment Benefits', val: '€28B'  },  // Higher in 2021, still recovering
+          { name: 'Disability Benefits',   val: '€18B'  },
+          { name: 'Family & Maternity',    val: '€15B'  },
+          { name: 'Other Social',          val: '€22B'  },
+        ]},
+        { amount: 100, pct: 17.4, sub: [
+          { name: 'Hospital Services',  val: '€53B' },
+          { name: 'Primary Care',       val: '€18B' },
+          { name: 'Pharmaceuticals',    val: '€14B' },
+          { name: 'Public Health (COVID)', val: '€11B' }, // Elevated
+          { name: 'Other Health',       val: '€4B'  },
+        ]},
+        { amount: 63, pct: 11.0, sub: [
+          { name: 'Primary & Secondary', val: '€32B' },
+          { name: 'University',          val: '€11B' },
+          { name: 'Preschool (0–3)',     val: '€7B'  },
+          { name: 'Vocational Training', val: '€7B'  },
+          { name: 'Other Education',     val: '€6B'  },
+        ]},
+        { amount: 57, pct: 9.9, sub: [
+          { name: 'Debt Interest',         val: '€30B' },
+          { name: 'Executive & Legislature', val: '€8B' },
+          { name: 'Tax & Finance Admin',   val: '€6B'  },
+          { name: 'Judiciary',             val: '€4B'  },
+          { name: 'Other General Services', val: '€9B' },
+        ]},
+        { amount: 45, pct: 7.8, sub: [
+          { name: 'Transport & Roads', val: '€15B' },
+          { name: 'Agriculture (CAP)', val: '€8B'  },
+          { name: 'Energy Policy',     val: '€7B'  },
+          { name: 'R&D & Innovation',  val: '€6B'  },
+          { name: 'Industry & Trade',  val: '€9B'  },
+        ]},
+        { amount: 22, pct: 3.8, sub: [
+          { name: 'National Police',  val: '€5B' },
+          { name: 'Civil Guard',      val: '€4B' },
+          { name: 'Regional Police',  val: '€5B' },
+          { name: 'Prisons',          val: '€3B' },
+          { name: 'Fire & Emergency', val: '€5B' },
+        ]},
+        { amount: 14, pct: 2.4, sub: [
+          { name: 'Social Housing',   val: '€3B' },
+          { name: 'Water & Sanitation', val: '€5B' },
+          { name: 'Urban Development', val: '€4B' },
+          { name: 'Community Services', val: '€2B' },
+        ]},
+        { amount: 11, pct: 1.9, sub: [
+          { name: 'Personnel',      val: '€5B'   },
+          { name: 'Equipment & R&D', val: '€3B'  },
+          { name: 'Operations',     val: '€2B'   },
+          { name: 'NATO / Intl.',   val: '€1B'   },
+        ]},
+        { amount: 9, pct: 1.6, sub: [
+          { name: 'Waste Management',  val: '€3B' },
+          { name: 'Water Treatment',   val: '€3B' },
+          { name: 'Biodiversity',      val: '€2B' },
+          { name: 'Climate Policy',    val: '€1B' },
+        ]},
+        { amount: 7, pct: 1.2, sub: [
+          { name: 'Culture & Arts',  val: '€3B'   },
+          { name: 'Sports',          val: '€2B'   },
+          { name: 'Broadcasting',    val: '€1B'   },
+          { name: 'Religion & Other', val: '€1B'  },
+        ]},
+      ],
+    },
+
+    2022: {
+      total: 585, gdp: 1327, gdpPct: 44.1, pop: '47.4M', perCapita: 12340,
+      note: 'Post-COVID normalisation. Energy crisis drove higher subsidies; pension expenditure rose with inflation indexation.',
+      cats: [
+        { amount: 253, pct: 43.2, sub: [
+          { name: 'Retirement Pensions',   val: '€167B' },
+          { name: 'Unemployment Benefits', val: '€21B'  },
+          { name: 'Disability Benefits',   val: '€18B'  },
+          { name: 'Family & Maternity',    val: '€15B'  },
+          { name: 'Other Social',          val: '€32B'  },
+        ]},
+        { amount: 98, pct: 16.8, sub: [
+          { name: 'Hospital Services',  val: '€52B' },
+          { name: 'Primary Care',       val: '€18B' },
+          { name: 'Pharmaceuticals',    val: '€14B' },
+          { name: 'Public Health',      val: '€8B'  },
+          { name: 'Other Health',       val: '€6B'  },
+        ]},
+        { amount: 65, pct: 11.1, sub: [
+          { name: 'Primary & Secondary', val: '€33B' },
+          { name: 'University',          val: '€12B' },
+          { name: 'Preschool (0–3)',     val: '€7B'  },
+          { name: 'Vocational Training', val: '€7B'  },
+          { name: 'Other Education',     val: '€6B'  },
+        ]},
+        { amount: 56, pct: 9.6, sub: [
+          { name: 'Debt Interest',          val: '€33B' },
+          { name: 'Executive & Legislature', val: '€8B' },
+          { name: 'Tax & Finance Admin',    val: '€6B'  },
+          { name: 'Judiciary',              val: '€4B'  },
+          { name: 'Other General Services', val: '€5B'  },
+        ]},
+        { amount: 46, pct: 7.9, sub: [
+          { name: 'Transport & Roads', val: '€15B' },
+          { name: 'Agriculture (CAP)', val: '€8B'  },
+          { name: 'Energy Subsidies',  val: '€10B' }, // Higher due to energy crisis
+          { name: 'R&D & Innovation',  val: '€6B'  },
+          { name: 'Industry & Trade',  val: '€7B'  },
+        ]},
+        { amount: 23, pct: 3.9, sub: [
+          { name: 'National Police',  val: '€5B' },
+          { name: 'Civil Guard',      val: '€4B' },
+          { name: 'Regional Police',  val: '€5B' },
+          { name: 'Prisons',          val: '€3B' },
+          { name: 'Fire & Emergency', val: '€6B' },
+        ]},
+        { amount: 14, pct: 2.4, sub: [
+          { name: 'Social Housing',    val: '€3B' },
+          { name: 'Water & Sanitation', val: '€5B' },
+          { name: 'Urban Development', val: '€4B' },
+          { name: 'Community Services', val: '€2B' },
+        ]},
+        { amount: 12, pct: 2.1, sub: [
+          { name: 'Personnel',       val: '€5.5B' },
+          { name: 'Equipment & R&D', val: '€3B'   },
+          { name: 'Operations',      val: '€2B'   },
+          { name: 'NATO / Intl.',    val: '€1.5B' },
+        ]},
+        { amount: 10, pct: 1.7, sub: [
+          { name: 'Waste Management', val: '€4B' },
+          { name: 'Water Treatment',  val: '€3B' },
+          { name: 'Biodiversity',     val: '€2B' },
+          { name: 'Climate Policy',   val: '€1B' },
+        ]},
+        { amount: 8, pct: 1.4, sub: [
+          { name: 'Culture & Arts',   val: '€3B'   },
+          { name: 'Sports',           val: '€2B'   },
+          { name: 'Broadcasting',     val: '€1.5B' },
+          { name: 'Religion & Other', val: '€1.5B' },
+        ]},
+      ],
+    },
+
+    2023: {
+      total: 596, gdp: 1346, gdpPct: 44.3, pop: '47.5M', perCapita: 12550,
+      note: 'Continued pension growth linked to CPI indexation; defense spending increased; EU recovery funds (PRTR) active.',
+      cats: [
+        { amount: 261, pct: 43.8, sub: [
+          { name: 'Retirement Pensions',   val: '€171B' },
+          { name: 'Unemployment Benefits', val: '€22B'  },
+          { name: 'Disability Benefits',   val: '€19B'  },
+          { name: 'Family & Maternity',    val: '€16B'  },
+          { name: 'Other Social',          val: '€33B'  },
+        ]},
+        { amount: 98, pct: 16.4, sub: [
+          { name: 'Hospital Services',  val: '€52B' },
+          { name: 'Primary Care',       val: '€18B' },
+          { name: 'Pharmaceuticals',    val: '€14B' },
+          { name: 'Public Health',      val: '€8B'  },
+          { name: 'Other Health',       val: '€6B'  },
+        ]},
+        { amount: 66, pct: 11.1, sub: [
+          { name: 'Primary & Secondary', val: '€33B' },
+          { name: 'University',          val: '€12B' },
+          { name: 'Preschool (0–3)',     val: '€8B'  },
+          { name: 'Vocational Training', val: '€7B'  },
+          { name: 'Other Education',     val: '€6B'  },
+        ]},
+        { amount: 57, pct: 9.6, sub: [
+          { name: 'Debt Interest',          val: '€36B' },
+          { name: 'Executive & Legislature', val: '€8B' },
+          { name: 'Tax & Finance Admin',    val: '€6B'  },
+          { name: 'Judiciary',              val: '€4B'  },
+          { name: 'Other General Services', val: '€3B'  },
+        ]},
+        { amount: 45, pct: 7.5, sub: [
+          { name: 'Transport & Roads', val: '€16B' },
+          { name: 'Agriculture (CAP)', val: '€9B'  },
+          { name: 'Energy Policy',     val: '€7B'  },
+          { name: 'R&D & Innovation',  val: '€6B'  },
+          { name: 'Industry & Trade',  val: '€7B'  },
+        ]},
+        { amount: 24, pct: 4.0, sub: [
+          { name: 'National Police',  val: '€5B' },
+          { name: 'Civil Guard',      val: '€4B' },
+          { name: 'Regional Police',  val: '€6B' },
+          { name: 'Prisons',          val: '€3B' },
+          { name: 'Fire & Emergency', val: '€6B' },
+        ]},
+        { amount: 15, pct: 2.5, sub: [
+          { name: 'Social Housing',    val: '€4B' },
+          { name: 'Water & Sanitation', val: '€5B' },
+          { name: 'Urban Development', val: '€4B' },
+          { name: 'Community Services', val: '€2B' },
+        ]},
+        { amount: 12, pct: 2.0, sub: [
+          { name: 'Personnel',       val: '€5.5B' },
+          { name: 'Equipment & R&D', val: '€3B'   },
+          { name: 'Operations',      val: '€2B'   },
+          { name: 'NATO / Intl.',    val: '€1.5B' },
+        ]},
+        { amount: 10, pct: 1.7, sub: [
+          { name: 'Waste Management', val: '€4B' },
+          { name: 'Water Treatment',  val: '€3B' },
+          { name: 'Biodiversity',     val: '€2B' },
+          { name: 'Climate Policy',   val: '€1B' },
+        ]},
+        { amount: 8, pct: 1.3, sub: [
+          { name: 'Culture & Arts',   val: '€3B'   },
+          { name: 'Sports',           val: '€2B'   },
+          { name: 'Broadcasting',     val: '€1.5B' },
+          { name: 'Religion & Other', val: '€1.5B' },
+        ]},
+      ],
+    },
+  };
+
+  /* EU-27 average general government expenditure as % of GDP
+     Source: Eurostat GFS table gov_10a_exp — GDP-weighted EU-27 aggregate
+     Order matches CATS: Social Protection, Health, Education, General Public Services,
+     Economic Affairs, Public Order & Safety, Housing, Defense, Environment, Culture */
+  const EU_AVG_GDP_PCT = {
+    2021: [21.0, 8.0, 5.2, 7.3, 6.7, 1.9, 1.0, 1.4, 0.9, 1.0],
+    2022: [19.6, 7.5, 5.0, 6.7, 6.0, 1.8, 0.9, 1.5, 0.8, 1.0],
+    2023: [19.4, 7.4, 4.9, 6.6, 5.8, 1.8, 0.9, 1.6, 0.8, 1.0],
+  };
+
+  /* ─────────────────────────────────────────────────────────────
+     STATE
+  ───────────────────────────────────────────────────────────── */
+  let currentYear = 2023;
+  let donutChart = null;
+  let barChart   = null;
+  let euChart    = null;
+
+  function yearCats() {
+    return YEARS[currentYear].cats.map((c, i) => ({ ...CATS[i], ...c }));
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     SUMMARY CARDS
+  ───────────────────────────────────────────────────────────── */
+  function updateSummary() {
+    const y = YEARS[currentYear];
+    const prevYear = YEARS[currentYear - 1];
+
+    document.getElementById('s-total').textContent = `€${y.total} billion`;
+    document.getElementById('s-total-sub').textContent = 'Consolidated all administrations';
+
+    const deltaEl = document.getElementById('s-total-delta');
+    if (prevYear) {
+      const diff = y.total - prevYear.total;
+      const sign = diff >= 0 ? '+' : '';
+      deltaEl.textContent = `${sign}€${diff}B vs ${currentYear - 1}`;
+      deltaEl.className = `delta ${diff >= 0 ? 'up' : 'down'}`;
+    } else {
+      deltaEl.className = 'delta none';
+    }
+
+    document.getElementById('s-gdp').textContent  = `~${y.gdpPct}%`;
+    document.getElementById('s-gdp-sub').textContent = `GDP ${currentYear}: ~€${y.gdp} billion`;
+
+    document.getElementById('s-capita').textContent = `~€${y.perCapita.toLocaleString()}`;
+    document.getElementById('s-capita-sub').textContent = `Based on ~${y.pop} inhabitants`;
+
+    document.getElementById('s-largest').textContent = `${yearCats()[0].pct}% of total spending`;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     LEGEND CARDS
+  ───────────────────────────────────────────────────────────── */
+  function buildLegendCards() {
+    const cats = yearCats();
+    const grid  = document.getElementById('legendGrid');
+    grid.innerHTML = '';
+    cats.forEach((cat, i) => {
+      const card = document.createElement('div');
+      card.className = 'cat-card';
+      card.innerHTML = `
+        <div class="cat-icon" style="background:${cat.color}">${cat.icon}</div>
+        <div class="cat-info">
+          <div class="cat-name">${cat.label}</div>
+          <div class="cat-amount">€${cat.amount}B</div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width:${cat.pct}%;background:${cat.color}"></div>
+          </div>
+        </div>
+        <div class="cat-pct" style="color:${cat.color}">${cat.pct}%</div>
+      `;
+      card.addEventListener('click', () => showDetail(i));
+      grid.appendChild(card);
+    });
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     DETAIL PANEL
+  ───────────────────────────────────────────────────────────── */
+  function showDetail(i) {
+    const cat   = yearCats()[i];
+    const panel = document.getElementById('detailPanel');
+    document.getElementById('detailTitle').textContent =
+      `${cat.icon} ${cat.label} — €${cat.amount}B (${cat.pct}%)`;
+    document.getElementById('detailDesc').textContent = cat.desc;
+    document.getElementById('detailSubItems').innerHTML =
+      cat.sub.map(s =>
+        `<div class="sub-item" style="border-left:3px solid ${cat.color}">
+           <strong>${s.val}</strong>${s.name}
+         </div>`
+      ).join('');
+    panel.style.borderTopColor = cat.color;
+    panel.classList.add('visible');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     CHARTS — create once, update data on year change
+  ───────────────────────────────────────────────────────────── */
+  function initCharts() {
+    const cats = yearCats();
+
+    donutChart = new Chart(
+      document.getElementById('donutChart').getContext('2d'),
+      {
+        type: 'doughnut',
+        data: {
+          labels: cats.map(c => c.label),
+          datasets: [{
+            data: cats.map(c => c.amount),
+            backgroundColor: cats.map(c => c.color),
+            borderWidth: 2,
+            borderColor: '#fff',
+            hoverOffset: 10,
+          }]
+        },
+        options: {
+          cutout: '65%',
+          animation: { duration: 400 },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ` €${ctx.parsed}B  (${yearCats()[ctx.dataIndex].pct}%)`,
+              }
+            }
+          },
+          onClick: (evt, elements) => {
+            if (elements.length) showDetail(elements[0].index);
+          }
+        }
+      }
+    );
+
+    const sorted = [...cats].sort((a, b) => b.amount - a.amount);
+    barChart = new Chart(
+      document.getElementById('barChart').getContext('2d'),
+      {
+        type: 'bar',
+        data: {
+          labels: sorted.map(c => c.label),
+          datasets: [{
+            label: 'Spending (€ Billion)',
+            data: sorted.map(c => c.amount),
+            backgroundColor: sorted.map(c => c.color + 'cc'),
+            borderColor: sorted.map(c => c.color),
+            borderWidth: 2,
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          animation: { duration: 400 },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const idx = sorted.findIndex(c => c.label === barChart.data.labels[ctx.dataIndex]);
+                  return ` €${ctx.parsed.x}B  (${sorted[idx].pct}% of total)`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: '€ Billion' },
+              grid: { color: '#f0f0f0' }
+            },
+            y: { grid: { display: false } }
+          }
+        }
+      }
+    );
+  }
+
+  function updateCharts() {
+    const cats   = yearCats();
+    const sorted = [...cats].sort((a, b) => b.amount - a.amount);
+
+    donutChart.data.datasets[0].data = cats.map(c => c.amount);
+    donutChart.update();
+
+    barChart.data.labels                      = sorted.map(c => c.label);
+    barChart.data.datasets[0].data            = sorted.map(c => c.amount);
+    barChart.data.datasets[0].backgroundColor = sorted.map(c => c.color + 'cc');
+    barChart.data.datasets[0].borderColor     = sorted.map(c => c.color);
+    barChart.update();
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     EU COMPARISON CHART
+  ───────────────────────────────────────────────────────────── */
+  function spainGdpPct() {
+    const y = YEARS[currentYear];
+    return y.cats.map(c => parseFloat((c.amount / y.gdp * 100).toFixed(1)));
+  }
+
+  function initEUChart() {
+    const labels  = CATS.map(c => c.label);
+    const spainPc = spainGdpPct();
+    const euPc    = EU_AVG_GDP_PCT[currentYear];
+    const euTotal = euPc.reduce((a, b) => a + b, 0).toFixed(1);
+    const spTotal = spainPc.reduce((a, b) => a + b, 0).toFixed(1);
+    document.getElementById('eu-total-note').textContent =
+      `Spain total: ${spTotal}% of GDP · EU-27 total: ~${euTotal}% of GDP`;
+
+    euChart = new Chart(
+      document.getElementById('euChart').getContext('2d'),
+      {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Spain',
+              data: spainPc,
+              backgroundColor: '#c0392bcc',
+              borderColor: '#c0392b',
+              borderWidth: 2,
+              borderRadius: 5,
+            },
+            {
+              label: 'EU-27 Average',
+              data: euPc,
+              backgroundColor: '#2980b9cc',
+              borderColor: '#2980b9',
+              borderWidth: 2,
+              borderRadius: 5,
+            },
+          ]
+        },
+        options: {
+          indexAxis: 'y',
+          animation: { duration: 400 },
+          plugins: {
+            legend: {
+              display: true,
+              position: 'top',
+              labels: { usePointStyle: true, padding: 20 },
+            },
+            tooltip: {
+              callbacks: {
+                label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.x}% of GDP`,
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: '% of GDP' },
+              grid: { color: '#f0f0f0' },
+            },
+            y: { grid: { display: false } }
+          }
+        }
+      }
+    );
+  }
+
+  function updateEUChart() {
+    const spainPc = spainGdpPct();
+    const euPc    = EU_AVG_GDP_PCT[currentYear];
+    const euTotal = euPc.reduce((a, b) => a + b, 0).toFixed(1);
+    const spTotal = spainPc.reduce((a, b) => a + b, 0).toFixed(1);
+    document.getElementById('eu-total-note').textContent =
+      `Spain total: ${spTotal}% of GDP · EU-27 total: ~${euTotal}% of GDP`;
+
+    euChart.data.datasets[0].data = spainPc;
+    euChart.data.datasets[1].data = euPc;
+    euChart.update();
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     YEAR SWITCHING
+  ───────────────────────────────────────────────────────────── */
+  function setYear(year) {
+    currentYear = year;
+
+    document.querySelectorAll('.year-btn').forEach(btn => {
+      btn.classList.toggle('active', Number(btn.dataset.year) === year);
+    });
+
+    updateSummary();
+    buildLegendCards();
+    updateCharts();
+    updateEUChart();
+    document.getElementById('detailPanel').classList.remove('visible');
+  }
+
+  document.querySelectorAll('.year-btn').forEach(btn => {
+    btn.addEventListener('click', () => setYear(Number(btn.dataset.year)));
+  });
+
+  /* ─────────────────────────────────────────────────────────────
+     INIT
+  ───────────────────────────────────────────────────────────── */
+  updateSummary();
+  buildLegendCards();
+  initCharts();
+  initEUChart();
+</script>
+</body>
+</html>
