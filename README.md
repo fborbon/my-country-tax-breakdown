@@ -1,10 +1,12 @@
 # Where Do My Taxes Go? 🇪🇸
 
+**Live site: [https://fborbon.github.io/where-do-my-taxes-go](https://fborbon.github.io/where-do-my-taxes-go)**
+
 An interactive, single-page visualisation of how Spain's government spends public money — broken down by category across fiscal years 2021, 2022, and 2023.
 
 ## Live demo
 
-Open `index.html` directly in any browser — no server or build step required.
+Visit **[https://fborbon.github.io/where-do-my-taxes-go](https://fborbon.github.io/where-do-my-taxes-go)** or open `index.html` directly in any browser — no server or build step required.
 
 ## Features
 
