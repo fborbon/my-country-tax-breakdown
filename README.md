@@ -1,4 +1,4 @@
-# Where Do My Taxes Go? 🇪🇸
+# My Country Tax Breakdown
 
 **Live site: [https://fborbon.github.io/where-do-my-taxes-go](https://fborbon.github.io/where-do-my-taxes-go)**
 
