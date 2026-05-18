@@ -12,12 +12,13 @@ An interactive, single-page dashboard that shows how Spain's consolidated genera
 
 ## Table of Contents
 
-1. [Live Demo](#live-demo)
+1. [Live demo](#live-demo)
 2. [Features](#features)
-3. [Data Sources](#data-sources)
-4. [Spending Categories (COFOG)](#spending-categories-cofog)
-5. [Tech Stack](#tech-stack)
+3. [Data sources](#data-sources)
+4. [Spending categories (COFOG)](#spending-categories-cofog)
+5. [Tech stack](#tech-stack)
 6. [License](#license)
+7. [Auditing](#auditing)
 
 ---
 
