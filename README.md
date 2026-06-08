@@ -1,6 +1,6 @@
 # My Country Tax Breakdown
 
-**Live site: [https://fborbon.github.io/where-do-my-taxes-go](https://fborbon.github.io/where-do-my-taxes-go)**
+**Live site: [https://fborbon.github.io/my-country-tax-breakdown](https://fborbon.github.io/my-country-tax-breakdown)**
 
 An interactive, single-page dashboard that shows how Spain's consolidated general government spends public money — broken down into 11 COFOG spending categories across fiscal years 2021, 2022, and 2023. The tool helps citizens see where their taxes go, compare Spain's spending mix against the EU-27 average as a share of GDP, and explore year-on-year budget evolution — all sourced from official IGAE and Eurostat data with no backend, no build step, and no installation required.
 
@@ -24,7 +24,7 @@ An interactive, single-page dashboard that shows how Spain's consolidated genera
 
 ## Live demo
 
-Visit **[https://fborbon.github.io/where-do-my-taxes-go](https://fborbon.github.io/where-do-my-taxes-go)** or open `index.html` directly in any browser — no server or build step required.
+Visit **[https://fborbon.github.io/my-country-tax-breakdown](https://fborbon.github.io/my-country-tax-breakdown)** or open `index.html` directly in any browser — no server or build step required.
 
 ## Features
 
