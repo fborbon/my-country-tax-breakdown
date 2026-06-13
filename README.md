@@ -1,12 +1,12 @@
 # My Country Tax Breakdown
 
-**Live site: [https://fborbon.github.io/my-country-tax-breakdown](https://fborbon.github.io/my-country-tax-breakdown)**
+**Live site: [https://www.forwardforecasting.eu/my-country-tax-breakdown/](https://www.forwardforecasting.eu/my-country-tax-breakdown/)**
 
 An interactive, single-page dashboard that shows how Spain's consolidated general government spends public money — broken down into 11 COFOG spending categories across fiscal years 2021, 2022, and 2023. The tool helps citizens see where their taxes go, compare Spain's spending mix against the EU-27 average as a share of GDP, and explore year-on-year budget evolution — all sourced from official IGAE and Eurostat data with no backend, no build step, and no installation required.
 
-**Main technologies:** Vanilla HTML · CSS · JavaScript · Chart.js 4 (CDN) · GitHub Pages
+**Main technologies:** Vanilla HTML · CSS · JavaScript · Chart.js 4 (CDN)
 
-**Monthly cost:** $0. The site is a single static HTML file. Hosting is provided free by GitHub Pages. There are no servers, no databases, and no runtime dependencies to pay for.
+**Monthly cost:** $0 incremental. The site is a single static HTML file, served alongside the other forwardforecasting.eu demos from the same EC2/nginx instance — no additional servers, databases, or runtime dependencies to pay for.
 
 ---
 
@@ -24,7 +24,7 @@ An interactive, single-page dashboard that shows how Spain's consolidated genera
 
 ## Live demo
 
-Visit **[https://fborbon.github.io/my-country-tax-breakdown](https://fborbon.github.io/my-country-tax-breakdown)** or open `index.html` directly in any browser — no server or build step required.
+Visit **[https://www.forwardforecasting.eu/my-country-tax-breakdown/](https://www.forwardforecasting.eu/my-country-tax-breakdown/)** or open `index.html` directly in any browser — no server or build step required.
 
 ## Features
 
@@ -80,7 +80,7 @@ This section provides a structured checklist for review by an IT expert and a pu
 
 ### Audit Items
 
-- **Cost & resource minimization** — The project costs $0. A single static HTML file is hosted on GitHub Pages for free. No servers, databases, or runtime dependencies exist.
+- **Cost & resource minimization** — The project costs $0 incremental. A single static HTML file is served alongside the other forwardforecasting.eu demos from the same EC2/nginx instance. No additional servers, databases, or runtime dependencies exist.
 - **IT architecture** — Single-file, no-build static site. Minimalist and appropriate for a civic data visualization that does not require real-time data or user interaction beyond chart navigation. Zero infrastructure to maintain.
 - **Code efficiency** — All spending data is hardcoded in JavaScript arrays. Chart.js is loaded from a CDN. There is no build step, which eliminates toolchain maintenance entirely. Adding future years means manual updates to the data arrays.
 - **Cybersecurity** — No backend, no user data, no cookies, and no user authentication. The only external dependency is the Chart.js CDN; a compromised CDN could inject malicious scripts (supply-chain risk). Hosting the Chart.js bundle locally would eliminate this vector.
@@ -93,7 +93,7 @@ This section provides a structured checklist for review by an IT expert and a pu
 
 | Audit Item | Claude's Assessment | Human Expert Assessment |
 |---|---|---|
-| Cost & resource minimization | $0/month. GitHub Pages hosting at no cost. Zero infrastructure overhead. | |
+| Cost & resource minimization | $0/month incremental. Served from existing EC2/nginx instance. Zero additional infrastructure overhead. | |
 | IT architecture | Single-file no-build static site. Minimal and appropriate for this use case. | |
 | Code efficiency | Hardcoded JS data arrays are simple and fast. Chart.js CDN avoids local bundling at the cost of a CDN dependency. | |
 | Cybersecurity | No user data or backend. Chart.js CDN is the only external dependency and a potential supply-chain risk. | |
